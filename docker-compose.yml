@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: skewer-postgres
+    environment:
+      POSTGRES_DB: skewer
+      POSTGRES_USER: skewer
+      POSTGRES_PASSWORD: skewer
+    # Port 55432 so a locally installed Postgres on 5432 does not get in the way.
+    ports:
+      - "55432:5432"
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=256MB
+      # A demo database: durability is not what is being measured.
+      - -c
+      - synchronous_commit=off
+      # Detect deadlocks after 100 ms instead of 1 s: deadlocked strategies stall the run far less.
+      - -c
+      - deadlock_timeout=100ms
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skewer -d skewer"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    tmpfs:
+      - /var/lib/postgresql:rw

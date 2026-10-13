@@ -1,0 +1,9 @@
+target/
+.idea/
+*.iml
+.vscode/
+experiments/histories/*
+!experiments/histories/README.md
+experiments/matrix-run.log
+experiments/results/demo.html
+.jqwik-database
