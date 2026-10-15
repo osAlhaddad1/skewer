@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: skewer-bank
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://localhost:55432/skewer
+    username: skewer
+    password: skewer
+    hikari:
+      # Must exceed the workload's concurrency, or clients queue for connections instead of racing in Postgres.
+      maximum-pool-size: 80
+      connection-timeout: 5000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        # Log SQL per transaction when inspecting a strategy by hand: set to true
+        show_sql: false
+  flyway:
+    enabled: true
+  jackson:
+    deserialization:
+      # Missing numeric fields (amount, think time) default to zero.
+      fail-on-null-for-primitives: false
+
+server:
+  port: 8080
+  shutdown: immediate
+
+logging:
+  level:
+    # Aborts are the point of the experiment, not errors worth a stack trace.
+    org.hibernate.orm.jdbc.error: "OFF"
+    org.springframework.transaction.interceptor.TransactionInterceptor: "OFF"
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: "OFF"
+    org.hibernate.orm.jdbc.batch: "OFF"
