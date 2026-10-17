@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    name: Build, checker validation suite, integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      # Unit tests include the M3 gate: hand-built histories, 10,000 generated serial histories, mutations,
+      # and the JGraphT cross-check. Integration tests run every strategy against Postgres 18 (Testcontainers).
+      - run: ./mvnw -B verify
+
+  matrix-smoke:
+    name: Matrix smoke run
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - run: docker compose up -d --wait
+      - run: ./mvnw -B -q -DskipTests install
+      # Every cell once, 2 seconds each, then the controls. Fails if the negative control finds anything.
+      - run: >
+          java -jar experiments/target/skewer.jar matrix --quick --duration-ms 2000
+          --negative-runs 6 --positive-runs 2 --output target/smoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-report
+          path: |
+            docs/report/index.html
+            target/smoke/matrix.json
